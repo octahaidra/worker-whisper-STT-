@@ -6,11 +6,17 @@ import predict
 import runpod
 from runpod.serverless.utils.rp_validator import validate
 from runpod.serverless.utils import download_files_from_urls, rp_cleanup
+import runpod.logging as logging
 
 from rp_schema import INPUT_VALIDATIONS
 
+logging.basicConfig(level=logging.INFO)
+
 MODEL = predict.Predictor()
+# Initialize the model
+logging.info("Setting up the Whisper model...")
 MODEL.setup()
+logging.info("Whisper model setup complete.")
 
 
 def run(job):
@@ -18,6 +24,7 @@ def run(job):
     Run inference on the model.
     Returns output path, width the seed used to generate the image.
     '''
+    logging.info("Received job: %s", job.get('id', 'unknown'))
     job_input = job['input']
 
     # Setting the float parameters
@@ -34,13 +41,15 @@ def run(job):
     job_input['no_speech_threshold'] = 0.6
 
     # Input validation
+    logging.info("Validating input: %s", job_input)
     validated_input = validate(job_input, INPUT_VALIDATIONS)
 
     if 'errors' in validated_input:
         return {"error": validated_input['errors']}
-
+    logging.info("Input validation successful.")
+    
     job_input['audio'] = download_files_from_urls(job['id'], [job_input['audio']])[0]
-
+    logging.info("Audio file downloaded successfully.")
     whisper_results = MODEL.predict(
         audio=job_input["audio"],
         model_name=job_input.get("model", 'base'),
@@ -60,7 +69,7 @@ def run(job):
         logprob_threshold=job_input["logprob_threshold"],
         no_speech_threshold=job_input["no_speech_threshold"],
     )
-
+    logging.info("Whisper model prediction completed.")
     rp_cleanup.clean(['input_objects'])
 
     return whisper_results

@@ -11,7 +11,9 @@ import numpy as np
 from whisper.model import Whisper, ModelDimensions
 from whisper.tokenizer import LANGUAGES
 from whisper.utils import format_timestamp
+import logging
 
+logging.basicConfig(level=logging.INFO)
 
 class Predictor:
     ''' A Predictor class for the Whisper model '''
@@ -25,18 +27,21 @@ class Predictor:
             '''
             Load the model from the weights folder.
             '''
+            logging.info("loading model ..")
             try:
                 with open(f"weights/{model_name}.pt", "rb") as model_file:
                     checkpoint = torch.load(model_file, map_location="cpu")
+                    logging.info("model loaded..")
                     dims = ModelDimensions(**checkpoint["dims"])
                     model = Whisper(dims)
                     model.load_state_dict(checkpoint["model_state_dict"])
+                    logging.info("model processed..")
                     return model_name, model
             except FileNotFoundError:
                 print(f"Model {model_name} could not be found.")
                 return None, None
 
-        model_names = ["tiny", "base", "small", "medium", "large-v1", "large-v2"]
+        model_names = ["tiny", "base"]#, "small", "medium", "large-v1", "large-v2"]
         with ThreadPoolExecutor() as executor:
             for model_name, model in executor.map(load_model, model_names):
                 if model_name is not None:
@@ -64,6 +69,7 @@ class Predictor:
     ):
         """Run a single prediction on the model"""
         print(f"Transcribe with {model_name} model")
+        print(f" models: {self.models}")
         model = self.models[model_name]
         if torch.cuda.is_available():
             model = model.to("cuda")

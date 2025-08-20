@@ -7,23 +7,33 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-def test_whisper_stt():
+def get_base64_audio(file_path):
+    """Convert audio file to base64 string"""
+    with open(file_path, 'rb') as audio_file:
+        return base64.b64encode(audio_file.read()).decode('utf-8')
+
+def test_whisper_stt(use_base64=False, audio_path=None):
+    """Test Whisper STT with either URL or base64 input"""
     # Get the endpoint and API key from environment variables
     ENDPOINT_URL = os.getenv('RUNPOD_ENDPOINT_URL')
     PORT = os.getenv('PORT', '3001')  # Default to 3001 if not set
     API_KEY = os.getenv('RUNPOD_API_KEY')
-    
+
     if not ENDPOINT_URL or not API_KEY:
         raise ValueError("Please set RUNPOD_ENDPOINT_URL and RUNPOD_API_KEY in your .env file")
+
+    # Use the public URL for the audio file
+    audio_url = "https://raw.githubusercontent.com/octahaidra/worker-whisper-STT-/dev0/test/voice-sample.wav"
 
     # Test payload based on the schema
     payload = {
         "input": {
-            "audio": "https://drive.usercontent.google.com/u/0/uc?id=1ElvMrB5OqvHaMKBQ3UJLmaxaO8ewtmYx&export=download",  # Replace with your audio URL
+            "audio": get_base64_audio(audio_path) if use_base64 else audio_url,
+            "is_base64": use_base64,
             "model": "base",
             "transcription": "plain_text",
             "translate": False,
-            "language": None,
+            "language": "en",
             "temperature": 0,
             "best_of": 5,
             "beam_size": 5,
@@ -44,11 +54,10 @@ def test_whisper_stt():
         'Authorization': f'Bearer {API_KEY}',
         'Content-Type': 'application/json'
     }
-    url = f"{ENDPOINT_URL}:{PORT}/run"
     try:
         # Make the POST request to the endpoint
         response = requests.post(
-            ENDPOINT_URL,
+            f"{ENDPOINT_URL}:{PORT}/run",
             headers=headers,
             json=payload
         )
@@ -66,6 +75,14 @@ def test_whisper_stt():
     except requests.exceptions.RequestException as e:
         print(f"Error making request: {str(e)}")
         return None
+    finally:
+        pass
 
 if __name__ == "__main__":
-    test_whisper_stt()
+    # Test 1: Using URL
+    print("\n=== Testing with public URL ===")
+    test_whisper_stt(use_base64=False, audio_path="voice-sample.wav")
+
+    # Test 2: Using base64 encoded audio
+    print("\n=== Testing with base64 encoded audio ===")
+    test_whisper_stt(use_base64=True, audio_path="test/voice-sample.wav")

@@ -1,6 +1,8 @@
 ''' infer.py for runpod worker '''
 
 import os
+import base64
+import tempfile
 import predict
 
 import runpod
@@ -48,7 +50,16 @@ def run(job):
         return {"error": validated_input['errors']}
     logging.info("Input validation successful.")
     
-    job_input['audio'] = download_files_from_urls(job['id'], [job_input['audio']])[0]
+    # Handle audio input - either URL or base64
+    if job_input.get('is_base64', False):
+        # Decode base64 and save to temporary file
+        audio_data = base64.b64decode(job_input['audio'])
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
+            temp_file.write(audio_data)
+            job_input['audio'] = temp_file.name
+    else:
+        # Handle URL as before
+        job_input['audio'] = download_files_from_urls(job['id'], [job_input['audio']])[0]
     logging.info("Audio file downloaded successfully.")
     whisper_results = MODEL.predict(
         audio=job_input["audio"],

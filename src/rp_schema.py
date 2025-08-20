@@ -1,7 +1,14 @@
 INPUT_VALIDATIONS = {
     'audio': {
         'type': str,
-        'required': True
+        'required': True,
+        'description': 'URL to audio file or base64 encoded audio data'
+    },
+    'is_base64': {
+        'type': bool,
+        'required': False,
+        'default': False,
+        'description': 'Whether the audio input is base64 encoded'
     },
     'model': {
         'type': str,

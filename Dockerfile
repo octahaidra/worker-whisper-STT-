@@ -9,7 +9,10 @@ RUN apt-get update && \
     apt-get upgrade -y
 
 # Install System Packages
-RUN apt-get install ffmpeg -y
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    ffmpeg -version && \
+    which ffmpeg
 
 # Download Models
 COPY builder/download_models.sh /download_models.sh
@@ -24,6 +27,9 @@ RUN pip install --upgrade pip && \
     rm /requirements.txt
 
 ADD src .
+
+# Ensure ffmpeg is in PATH
+ENV PATH="/usr/bin:${PATH}"
 
 # Cleanup section (Worker Template)
 RUN apt-get autoremove -y && \

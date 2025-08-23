@@ -20,6 +20,22 @@ def process_job(job_id, input_data):
     except Exception as e:
         jobs[job_id] = {"status": "FAILED", "error": str(e)}
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint to verify service status."""
+    try:
+        # Check if the job handler is properly initialized
+        if not job_handler:
+            return {"status": "error", "detail": "Job handler not initialized"}
+        
+        return {
+            "status": "healthy",
+            "message": "Service is running",
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
 @app.post("/run")
 async def run_job(payload: dict):
     if not payload.get("input"):

@@ -85,5 +85,5 @@ def run(job):
 
     return whisper_results
 
-
-runpod.serverless.start({"handler": run})
+if __name__ == "__main__":
+	runpod.serverless.start({"handler": run})
